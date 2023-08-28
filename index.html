@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>XML Parser</title>
+</head>
+<body>
+    <h1>XML Parser</h1>
+    <input type="file" id="xmlFileInput" accept=".xml">
+    <button id="processButton">Process XML</button>
+    <a id="downloadLink" style="display: none;">Download Output</a>
+
+    <script>
+        document.getElementById('processButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('xmlFileInput');
+            const downloadLink = document.getElementById('downloadLink');
+            
+            if (fileInput.files.length === 0) {
+                return;
+            }
+
+            const xmlFile = fileInput.files[0];
+            const xmlData = await xmlFile.text();
+
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
+            const propertyElements = xmlDoc.querySelectorAll('Property');
+
+            const combinedProperties = {};
+
+            propertyElements.forEach(prop => {
+                const refNameElement = prop.querySelector('RefName');
+                const valueElement = prop.querySelector('Value');
+
+                if (refNameElement && valueElement) {
+                    const propertyName = refNameElement.textContent;
+                    const propertyValue = valueElement.textContent;
+
+                    if (propertyName === 'iopcount' || propertyName === 'PSvoltage') {
+                        if (!combinedProperties[propertyName]) {
+                            combinedProperties[propertyName] = [];
+                        }
+                        combinedProperties[propertyName].push(propertyValue);
+                    }
+                }
+            });
+
+            let formattedOutput = "Property                 Value\n";
+            formattedOutput += "------------------------------------\n";
+
+            for (const combinedName in combinedProperties) {
+                const values = combinedProperties[combinedName];
+                formattedOutput += `${combinedName.padEnd(25)}: ${values.join(', ')}\n`;
+            }
+
+            // Create a Blob containing the formatted output
+            const blob = new Blob([formattedOutput], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            // Set the download link properties
+            downloadLink.href = url;
+            downloadLink.download = 'output.txt';
+            downloadLink.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
