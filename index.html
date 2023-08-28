@@ -31,6 +31,7 @@
     <h1 class="courier-header">XML Parser</h1>
     <input type="file" id="xmlFileInput" accept=".xml">
     <button id="processButton">Process XML</button>
+    <a id="downloadLink" style="display: none;">Download Output</a>
     
     <!-- Add the scrollable container for the output -->
     <div class="scrollable-container">
@@ -41,6 +42,7 @@
         document.getElementById('processButton').addEventListener('click', async () => {
             const fileInput = document.getElementById('xmlFileInput');
             const outputElement = document.getElementById('output');
+            const downloadLink = document.getElementById('downloadLink');
             
             if (fileInput.files.length === 0) {
                 outputElement.textContent = "No XML file selected.";
@@ -82,6 +84,15 @@
             }
 
             outputElement.textContent = formattedOutput;
+
+            // Create a Blob containing the formatted output
+            const blob = new Blob([formattedOutput], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            // Set the download link properties
+            downloadLink.href = url;
+            downloadLink.download = 'output.txt';
+            downloadLink.style.display = 'block';
         });
     </script>
 </body>
