@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>XML Parser</title>
+</head>
+<body>
+    <h1>XML Parser</h1>
+    <input type="file" id="xmlFileInput" accept=".xml">
+    <button id="processButton">Process XML</button>
+    <a id="downloadLink" style="display: none;">Download Output</a>
+
+    <table id="outputTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Marked</th>
+                <th>iopcount</th>
+                <th>PSvoltage</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        document.getElementById('processButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('xmlFileInput');
+            const downloadLink = document.getElementById('downloadLink');
+            const outputTable = document.getElementById('outputTable');
+            const tbody = outputTable.querySelector('tbody');
+            
+            if (fileInput.files.length === 0) {
+                return;
+            }
+
+            const xmlFile = fileInput.files[0];
+            const xmlData = await xmlFile.text();
+
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
+            const conveyorElements = xmlDoc.querySelectorAll('Conveyor');
+
+            tbody.innerHTML = ''; // Clear existing rows
+
+            conveyorElements.forEach(conveyorElement => {
+                const markedAttribute = conveyorElement.getAttribute('Marked');
+                const refNameElements = conveyorElement.querySelectorAll('RefName');
+
+                let iopcountValue = '';
+                let psvoltageValue = '';
+
+                refNameElements.forEach(refNameElement => {
+                    const propertyName = refNameElement.textContent;
+                    const valueElement = refNameElement.nextElementSibling;
+
+                    if (propertyName === 'iopcount') {
+                        iopcountValue = valueElement.textContent;
+                    } else if (propertyName === 'PSvoltage') {
+                        psvoltageValue = valueElement.textContent;
+                    }
+                });
+
+                const row = tbody.insertRow();
+                const cellMarked = row.insertCell();
+                const cellIopcount = row.insertCell();
+                const cellPSvoltage = row.insertCell();
+
+                cellMarked.textContent = markedAttribute;
+                cellIopcount.textContent = iopcountValue;
+                cellPSvoltage.textContent = psvoltageValue;
+            });
+
+            // Show the table
+            outputTable.style.display = 'table';
+
+            // Create a Blob containing the table content
+            const blob = new Blob([outputTable.outerHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            // Set the download link properties
+            downloadLink.href = url;
+            downloadLink.download = 'output.html';
+            downloadLink.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
