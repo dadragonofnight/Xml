@@ -18,13 +18,24 @@
             font-size: 32px;
             text-align: center;
         }
+
+        /* Add this style to allow content to overflow without wrapping */
+        #output {
+            white-space: pre;
+            max-height: 300px; /* Adjust the maximum height as needed */
+            overflow: auto;
+        }
     </style>
 </head>
 <body>
     <h1 class="courier-header">XML Parser</h1>
     <input type="file" id="xmlFileInput" accept=".xml">
     <button id="processButton">Process XML</button>
-    <pre id="output"></pre>
+    
+    <!-- Add the scrollable container for the output -->
+    <div class="scrollable-container">
+        <pre id="output"></pre>
+    </div>
 
     <script>
         document.getElementById('processButton').addEventListener('click', async () => {
