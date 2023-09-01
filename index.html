@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>XML Parser</title>
-     <style>
+    <style>
         body {
             background-color: #f3f6f4;
             display: flex;
@@ -11,12 +11,6 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-        }
-
-        .courier-header {
-            font-family: Courier, monospace;
-            font-size: 32px;
-            text-align: center;
         }
     </style>
 </head>
@@ -41,16 +35,21 @@
 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
-            const conveyorElements = xmlDoc.querySelectorAll('Conveyor');
+
+            const propertiesElements = xmlDoc.querySelectorAll('Properties');
+
+            // Initialize variables for the combination
+            let markedAttribute = '';
+            let iopcountValue = '';
+            let psAmpValue = '';
+
+            // Create an object to store quantities for each combination
+            const quantityByCombination = {};
 
             tbody.innerHTML = ''; // Clear existing rows
 
-            conveyorElements.forEach(conveyorElement => {
-                const markedAttribute = conveyorElement.getAttribute('Marked');
-                const refNameElements = conveyorElement.querySelectorAll('RefName');
-
-                let iopcountValue = '';
-                let psvoltageValue = '';
+            propertiesElements.forEach(propertiesElement => {
+                const refNameElements = propertiesElement.querySelectorAll('RefName');
 
                 refNameElements.forEach(refNameElement => {
                     const propertyName = refNameElement.textContent;
@@ -58,19 +57,27 @@
 
                     if (propertyName === 'iopcount') {
                         iopcountValue = valueElement.textContent;
-                    } else if (propertyName === 'PSvoltage') {
-                        psvoltageValue = valueElement.textContent;
+                    } else if (propertyName === 'powersupplysize') {
+                        psAmpValue = valueElement.textContent;
+
+                        // Replace "less power supply" with "lps"
+                        if (psAmpValue.toLowerCase() === 'less power supply') {
+                            psAmpValue = '';
+                        }
+
+                        // Create a unique key for the combination
+                        const combinationKey = `${markedAttribute}_${iopcountValue}_${psAmpValue}`;
+
+                        // Initialize or increment the quantity for this combination
+                        if (combinationKey in quantityByCombination) {
+                            quantityByCombination[combinationKey]++;
+                        } else {
+                            quantityByCombination[combinationKey] = 1;
+                        }
+                    } else if (propertyName === 'MarkNumber') {
+                        markedAttribute = valueElement.textContent;
                     }
                 });
-
-                const row = tbody.insertRow();
-                const cellMarked = row.insertCell();
-                const cellIopcount = row.insertCell();
-                const cellPSvoltage = row.insertCell();
-
-                cellMarked.textContent = markedAttribute;
-                cellIopcount.textContent = iopcountValue;
-                cellPSvoltage.textContent = psvoltageValue;
             });
 
             // Create a table
@@ -79,12 +86,30 @@
                 <thead>
                     <tr>
                         <th>Marked</th>
-                        <th>iopcount</th>
-                        <th>PSvoltage</th>
+                        <th>Iopcount</th>
+                        <th>PS Amp</th>
+                        <th>Quantity</th>
                     </tr>
                 </thead>
             `;
-            table.appendChild(tbody);
+
+            // Create rows for each combination
+            for (const combinationKey in quantityByCombination) {
+                if (quantityByCombination.hasOwnProperty(combinationKey)) {
+                    const [marked, iopcount, psAmp] = combinationKey.split('_');
+                    const quantity = quantityByCombination[combinationKey];
+
+                    const row = table.insertRow();
+                    row.innerHTML = `
+                        <td>${marked || '-'}</td>
+                        <td>${iopcount || '-'}</td>
+                        <td>${psAmp || '-'}</td>
+                        <td>${quantity}</td>
+                    `;
+                }
+            }
+
+            tbody.appendChild(table);
 
             // Create a Blob containing the table content
             const blob = new Blob([table.outerHTML], { type: 'text/html' });
